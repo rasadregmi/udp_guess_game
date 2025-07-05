@@ -1,4 +1,3 @@
-// client.c - Final version with real-time display and prompt cleaning
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +14,6 @@ int sockfd;
 struct sockaddr_in serverAddr;
 volatile int running = 1;
 
-// Color codes
 #define COLOR_RESET  "\033[0m"
 #define COLOR_GREEN  "\033[32m"
 #define COLOR_RED    "\033[31m"
@@ -29,7 +27,6 @@ void handle_shutdown(int signo) {
     exit(0);
 }
 
-// Thread to receive messages in real-time
 void *receive_thread(void *arg) {
     char buffer[BUFSIZE];
     while (running) {
@@ -37,11 +34,10 @@ void *receive_thread(void *arg) {
         if (n > 0) {
             buffer[n] = '\0';
 
-            // Clear current line and print message
-            printf("\r\033[K");  // clear line
+            printf("\r\033[K");  
             if (strstr(buffer, "removed due to inactivity")) {
                 printf(COLOR_RED "🧠 Server: %s\n" COLOR_RESET, buffer);
-                raise(SIGINT);  // exit gracefully
+                raise(SIGINT);  
                 break;
             }
 
@@ -72,12 +68,10 @@ int main() {
     fgets(name, sizeof(name), stdin);
     name[strcspn(name, "\n")] = '\0';
 
-    // Send registration message
     char registerMsg[64];
     snprintf(registerMsg, sizeof(registerMsg), "REGISTER:%s", name);
     sendto(sockfd, registerMsg, strlen(registerMsg), 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
 
-    // Receive welcome message
     char buffer[BUFSIZE];
     ssize_t n = recvfrom(sockfd, buffer, BUFSIZE - 1, 0, NULL, NULL);
     if (n > 0) {
@@ -85,11 +79,9 @@ int main() {
         printf(COLOR_GREEN "🧠 Server: %s\n" COLOR_RESET, buffer);
     }
 
-    // Launch receiver thread
     pthread_t recvThread;
     pthread_create(&recvThread, NULL, receive_thread, NULL);
 
-    // Input loop
     while (running) {
         printf(COLOR_YELLOW "Enter your guess (1-100): " COLOR_RESET);
         if (fgets(buffer, sizeof(buffer), stdin) == NULL) break;
